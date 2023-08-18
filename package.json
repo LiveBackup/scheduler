@@ -26,7 +26,7 @@
     "posttest": "npm run lint",
     "test:dev": "lb-mocha --allow-console-logs dist/__tests__/**/*.js && npm run posttest",
     "docker:build": "docker build -t scheduler .",
-    "docker:run": "docker run -p 3000:3000 -d scheduler",
+    "docker:run": "docker run -p 5000:5000 -d scheduler",
     "premigrate": "npm run build",
     "migrate": "node ./dist/migrate",
     "preopenapi-spec": "npm run build",
@@ -49,12 +49,15 @@
     "!*/__tests__"
   ],
   "dependencies": {
+    "@bull-monitor/express": "^5.2.0",
     "@loopback/boot": "^5.0.4",
     "@loopback/core": "^4.0.4",
     "@loopback/repository": "^5.1.5",
     "@loopback/rest": "^12.0.4",
     "@loopback/rest-explorer": "^5.0.4",
     "@loopback/service-proxy": "^5.0.4",
+    "bullmq": "^4.7.3",
+    "dotenv": "^16.3.1",
     "loopback-connector-kv-redis": "^3.0.3",
     "tslib": "^2.0.0"
   },

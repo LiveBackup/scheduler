@@ -1,12 +1,15 @@
 import {inject, lifeCycleObserver, LifeCycleObserver} from '@loopback/core';
 import {juggler} from '@loopback/repository';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const config = {
   name: 'tasks_queues',
   connector: 'kv-redis',
   host: process.env.TASKS_QUEUE_HOST ?? 'localhost',
   port: +(process.env.TASKS_QUEUE_PORT ?? 6379),
-  db: Number(process.env.TASKS_QUEUE_DATABASE),
+  db: +(process.env.TASKS_QUEUE_DATABASE ?? 0),
   username: process.env.TASKS_QUEUE_USER,
   password: process.env.TASKS_QUEUE_PASSWORD,
 };
