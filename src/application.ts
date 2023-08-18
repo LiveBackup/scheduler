@@ -1,14 +1,16 @@
 import {BootMixin} from '@loopback/boot';
 import {ApplicationConfig} from '@loopback/core';
+import {RepositoryMixin} from '@loopback/repository';
+import {RestApplication} from '@loopback/rest';
 import {
   RestExplorerBindings,
   RestExplorerComponent,
 } from '@loopback/rest-explorer';
-import {RepositoryMixin} from '@loopback/repository';
-import {RestApplication} from '@loopback/rest';
 import {ServiceMixin} from '@loopback/service-proxy';
 import path from 'path';
+import {TasksQueuesDataSource} from './datasources';
 import {MySequence} from './sequence';
+import {TasksQueuesService, TasksQueuesServiceBindings} from './services';
 
 export {ApplicationConfig};
 
@@ -40,5 +42,22 @@ export class SchedulerApplication extends BootMixin(
         nested: true,
       },
     };
+  }
+
+  async setupQueues(): Promise<void> {
+    // Init resources
+    const tasksQueuesDb = new TasksQueuesDataSource();
+    const tasksQueuesService = new TasksQueuesService(tasksQueuesDb);
+    await tasksQueuesService.init();
+
+    // Bind the resources
+    this.bind('datasources.tasks_queues').to(tasksQueuesDb);
+    this.bind(TasksQueuesServiceBindings.SERVICE).to(tasksQueuesService);
+
+    // Mount router
+    this.mountExpressRouter(
+      '/queues/monitor',
+      tasksQueuesService.monitor.router,
+    );
   }
 }
