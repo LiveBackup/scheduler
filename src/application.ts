@@ -48,13 +48,13 @@ export class SchedulerApplication extends BootMixin(
     // Init resources
     const tasksQueuesDb = new TasksQueuesDataSource();
     const tasksQueuesService = new TasksQueuesService(tasksQueuesDb);
+    await tasksQueuesService.init();
 
     // Bind the resources
     this.bind('datasources.tasks_queues').to(tasksQueuesDb);
     this.bind(TasksQueuesServiceBindings.SERVICE).to(tasksQueuesService);
 
-    // Init and bind monitor
-    await tasksQueuesService.monitor.init();
+    // Mount router
     this.mountExpressRouter(
       '/queues/monitor',
       tasksQueuesService.monitor.router,

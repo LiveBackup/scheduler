@@ -19,6 +19,8 @@ export class TasksQueuesService {
   // Available Queues
   public readonly verificationEmailQueue: Queue;
   public readonly passwordRecovery: Queue;
+  // Scheduled Queues
+  public readonly tokensCleanup: Queue;
 
   constructor(
     @inject('datasources.tasks_queues')
@@ -38,13 +40,32 @@ export class TasksQueuesService {
     // Init queues
     this.verificationEmailQueue = new Queue('VerificationEmail', bullMQSettings);
     this.passwordRecovery = new Queue('PasswordRecovery', bullMQSettings);
+    // Init scheduled queues
+    this.tokensCleanup = new Queue('TokensCleanup', bullMQSettings);
 
     // Setup BullMqMonitor
     this.monitor = new BullMonitorExpress({
       queues: [
         new BullMQAdapter(this.verificationEmailQueue),
         new BullMQAdapter(this.passwordRecovery),
+        new BullMQAdapter(this.tokensCleanup),
       ],
     });
+  }
+
+  async init() {
+    await this.monitor.init();
+
+    // Setup scheduled queues
+    // Clean expired tokens every day
+    this.tokensCleanup.add(
+      'Clean expired tokens',
+      {},
+      {
+        repeat: {
+          pattern: '0 0 0 * * *',
+        },
+      },
+    );
   }
 }
