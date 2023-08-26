@@ -1,18 +1,27 @@
 import {BullMonitorExpress} from '@bull-monitor/express';
-import {BullMQAdapter} from "@bull-monitor/root/dist/bullmq-adapter";
+import {BullMQAdapter} from '@bull-monitor/root/dist/bullmq-adapter';
 import {BindingKey, BindingScope, inject, injectable} from '@loopback/core';
 import {Queue, QueueOptions} from 'bullmq';
-import {TasksQueuesDataSource} from '../datasources';
 
 export namespace TasksQueuesServiceBindings {
   export const SERVICE = BindingKey.create<TasksQueuesService>(
     'services.TasksQueuesService',
   );
+  export const QUEUE_CONFIG = BindingKey.create<TasksQueuesConfig>(
+    'services.TasksQueuesService.queue.config',
+  );
+}
+
+export type TasksQueuesConfig = {
+  host: string;
+  port: number;
+  db?: number;
+  username?: string;
+  password?: string;
 };
 
 @injectable({scope: BindingScope.SINGLETON})
 export class TasksQueuesService {
-
   // Monitor
   public readonly monitor: BullMonitorExpress;
 
@@ -23,22 +32,16 @@ export class TasksQueuesService {
   public readonly tokensCleanup: Queue;
 
   constructor(
-    @inject('datasources.tasks_queues')
-    tasksQueuesDataSource: TasksQueuesDataSource,
+    @inject(TasksQueuesServiceBindings.QUEUE_CONFIG)
+    tasksQueuesConfig: TasksQueuesConfig,
   ) {
-    console.log('Queues');
-    const bullMQSettings: QueueOptions = {
-      connection: {
-        host: tasksQueuesDataSource.settings.host,
-        port: tasksQueuesDataSource.settings.port,
-        db: tasksQueuesDataSource.settings.db,
-        username: tasksQueuesDataSource.settings.user,
-        password: tasksQueuesDataSource.settings.password,
-      },
-    };
+    const bullMQSettings: QueueOptions = {connection: tasksQueuesConfig};
 
     // Init queues
-    this.verificationEmailQueue = new Queue('VerificationEmail', bullMQSettings);
+    this.verificationEmailQueue = new Queue(
+      'VerificationEmail',
+      bullMQSettings,
+    );
     this.passwordRecovery = new Queue('PasswordRecovery', bullMQSettings);
     // Init scheduled queues
     this.tokensCleanup = new Queue('TokensCleanup', bullMQSettings);
@@ -58,8 +61,8 @@ export class TasksQueuesService {
 
     // Setup scheduled queues
     // Clean expired tokens every day
-    this.tokensCleanup.add(
-      'Clean expired tokens',
+    await this.tokensCleanup.add(
+      'Automatic tokens CleanUp',
       {},
       {
         repeat: {

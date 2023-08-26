@@ -7,10 +7,12 @@ import {
   RestExplorerComponent,
 } from '@loopback/rest-explorer';
 import {ServiceMixin} from '@loopback/service-proxy';
+import dotenv from 'dotenv';
 import path from 'path';
-import {TasksQueuesDataSource} from './datasources';
 import {MySequence} from './sequence';
 import {TasksQueuesService, TasksQueuesServiceBindings} from './services';
+
+dotenv.config();
 
 export {ApplicationConfig};
 
@@ -42,16 +44,26 @@ export class SchedulerApplication extends BootMixin(
         nested: true,
       },
     };
+
+    // Bind TasksQueues Config
+    this.bind(TasksQueuesServiceBindings.QUEUE_CONFIG).to({
+      host: process.env.TASKS_QUEUE_HOST ?? 'localhost',
+      port: +(process.env.TASKS_QUEUE_PORT ?? 6379),
+      db: +(process.env.TASKS_QUEUE_DATABASE ?? 0),
+      username: process.env.TASKS_QUEUE_USER,
+      password: process.env.TASKS_QUEUE_PASSWORD,
+    });
   }
 
   async setupQueues(): Promise<void> {
     // Init resources
-    const tasksQueuesDb = new TasksQueuesDataSource();
-    const tasksQueuesService = new TasksQueuesService(tasksQueuesDb);
+    const tasksQueuesConfig = await this.get(
+      TasksQueuesServiceBindings.QUEUE_CONFIG,
+    );
+    const tasksQueuesService = new TasksQueuesService(tasksQueuesConfig);
     await tasksQueuesService.init();
 
     // Bind the resources
-    this.bind('datasources.tasks_queues').to(tasksQueuesDb);
     this.bind(TasksQueuesServiceBindings.SERVICE).to(tasksQueuesService);
 
     // Mount router
