@@ -1,11 +1,8 @@
 import {Client} from '@loopback/testlab';
-import sinon from 'sinon';
 import {SchedulerApplication} from '../../application';
-import {givenClient, givenRunningApp} from '../helpers/app.helpers';
+import {givenClient, givenRunningApp} from '../helpers/app.helper';
 
 describe('Acceptance - Application init', () => {
-  // Sinon sandbox
-  const sandbox = sinon.createSandbox();
   // Application
   let app: SchedulerApplication;
   let client: Client;
@@ -17,10 +14,6 @@ describe('Acceptance - Application init', () => {
 
   after(async () => {
     await app.stop();
-  });
-
-  afterEach(() => {
-    sandbox.restore();
   });
 
   it('Exposes the tasks monitor', async () => {
